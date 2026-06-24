@@ -185,7 +185,7 @@ def main():
     is_recording = False
     cooldown_counter = 0
     COOLDOWN_LIMIT = 15  # Number of empty frames to wait before finalizing a sign (bridging dropouts)
-    MIN_SIGN_FRAMES = 12  # Minimum frames to classify it as a sign (filters accidental movement)
+    MIN_SIGN_FRAMES = 5  # Minimum frames to classify it as a sign (filters accidental movement)
     MAX_SIGN_FRAMES = 90  # Maximum frames before auto-triggering prediction (~3 seconds)
     
     current_prediction = "READY - Make a sign"
@@ -257,7 +257,7 @@ def main():
                         right_raised = (right_wrist.y < right_shoulder_y + 0.15) if right_wrist.visibility > 0.5 else False
                         
                         if not (left_raised or right_raised):
-                            current_cooldown_limit = 3
+                            current_cooldown_limit = 5
                     except Exception:
                         current_cooldown_limit = 5
                 else:
