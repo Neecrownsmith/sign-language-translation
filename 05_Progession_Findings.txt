@@ -57,8 +57,8 @@ Model 2: SimpleRNN Baseline
 | bidirectional_gru           | 434,896          | 7.4362    | 0.48%         | Medium             | Done   |
 | cnn_lstm                    | 364,752          | 7.3895    | 0.27%         | Medium             | Done   |
 | kaggle_transformer          | 685,776          | 7.5833    | 0.20%         | Medium             | Done   |
-| advanced_kaggle_transformer | 358,688          | Pending   | Pending       | Low (Regularized)  | Untrained |
-| eca_conv1d_transformer      | 681,360          | Pending   | Pending       | Low (Regularized)  | Untrained |
+| mst | 358,688          | Pending   | Pending       | Low (Regularized)  | Untrained |
+| eca_ct      | 681,360          | Pending   | Pending       | Low (Regularized)  | Untrained |
 
 ### 2B. Filtered Vocabulary Run (50 Classes)
 *Note: Evaluated on the top 50 most frequent signs. Hand coordinate offset/mismatch, left/right hand swap, and early stopping warmup conflict limited the advanced models, but the baseline LSTM achieved 17.72% (roughly 9x better than the 50-class random guess level of 2.0%).*
@@ -72,8 +72,8 @@ Model 2: SimpleRNN Baseline
 | bidirectional_gru           | 183,346          |    3.8968 | 2.53%         | Medium             | Done   |
 | cnn_lstm                    | 113,202          |    3.9249 | 2.53%         | Medium             | Done   |
 | kaggle_transformer          | 434,226          |    3.8993 | 2.53%         | Medium             | Done   |
-| advanced_kaggle_transformer | 396,213          |    2.7530 | 37.97%        | Low (Regularized)  | Done   |
-| eca_conv1d_transformer      | 705,353          |    2.6307 | 46.84%        | Low (Regularized)  | Done   |
+| mst | 396,213          |    2.7530 | 37.97%        | Low (Regularized)  | Done   |
+| eca_ct      | 705,353          |    2.6307 | 46.84%        | Low (Regularized)  | Done   |
 
 
 
@@ -96,10 +96,10 @@ Model 2: SimpleRNN Baseline
 - Kaggle Transformer:
   Implements basic temporal convolutions and a standard transformer block with 0.1 label smoothing to improve generalization.
 
-- Advanced Kaggle Transformer:
+- Multi-Stream Transformer (MST):
   Implements specialized `LandmarkEmbedding` layers for each landmark group (Lips, Left Hand, Right Hand, Pose) to prevent structure mixing. Uses a trainable `SoftmaxWeightedFusion` layer to let the model learn the relative importance of hand joints, face markers, and body pose, and adds `PositionalEmbedding`.
 
-- 1st Place ECA Conv1D Transformer:
+- 1st Place ECA Conv-Transformer (ECA-CT):
   Implements **Efficient Channel Attention (ECA)** to capture cross-channel interactions along with causal depthwise separable convolutions to extract temporal context, recursively stacked with Multi-Head Self-Attention layers. Trained via Cosine Annealing with Warmup.
 
 ----------------------------------------------------------------------
@@ -179,8 +179,8 @@ Here is the exact mathematical explanation of why this bottleneck persists, whic
 To test if the advanced models could learn with a smaller vocabulary size, we ran a 50-class progression test. Even with 50 classes, the results were highly uneven:
 - **Baseline LSTM**: Got **17.72%** test accuracy.
 - **Regularized LSTM & Compact Transformer**: Got **7.59%** test accuracy.
-- **Advanced Kaggle Transformer**: Got **1.27%** test accuracy (worse than random guess, which is 2.0%).
-- **ECA Conv1D Transformer**: Got **0.00%** test accuracy.
+- **Multi-Stream Transformer (MST)**: Got **1.27%** test accuracy (worse than random guess, which is 2.0%).
+- **ECA Conv-Transformer (ECA-CT)**: Got **0.00%** test accuracy.
 
 Our detailed analysis of the training process and layer traces revealed three major bottlenecks causing this behavior:
 
@@ -209,10 +209,10 @@ To resolve these bottlenecks and obtain high classification accuracy, we propose
 After applying the Phase 2 preprocessing refactor and model adjustments, we trained the advanced architectures on the 50-class filtered vocabulary. The results showed a major breakthrough:
 
 ### Breakthrough Metrics Comparison:
-- **Advanced Kaggle Transformer**:
+- **Multi-Stream Transformer (MST)**:
   * *Before Refactor*: **1.27%** test accuracy (worse than random guess).
   * *After Refactor*: **37.97%** test accuracy (a 30x improvement). Test loss dropped from **3.9802** to **2.7530**.
-- **ECA Conv1D Transformer**:
+- **ECA Conv-Transformer (ECA-CT)**:
   * *Before Refactor*: **0.00%** test accuracy (completely failed).
   * *After Refactor*: **46.84%** test accuracy (a massive performance leap, beating baseline LSTM). Test loss dropped from **3.9182** to **2.6307**.
 
@@ -220,6 +220,6 @@ After applying the Phase 2 preprocessing refactor and model adjustments, we trai
 1. **Coordinate Alignment Success**: Centering the lips and pose relative to the face origin, and the hands relative to the wrist origin, created a unified scale. The projection layers (`LandmarkEmbedding`) could now extract meaningful visual patterns instead of struggling with screen-space translations.
 2. **Hand-Symmetry & Pattern Pooling**: Resolving left vs. right-handedness by mirroring the dominant hand into a canonical orientation allowed the model to pool samples. With only ~9.5 training videos per class, training the models on both left-handed and right-handed variations separately was a major bottleneck; canonical left-hand mapping halved the structural search space.
 3. **Warmup & Optimization Harmony**: Extending early stopping patience to 25 epochs allowed the learning rate schedule (warmup up to Epoch 6 followed by cosine annealing decay) to compile and refine model weights. The models avoided premature early-stopping failure.
-4. **Generalization Power**: The ECA Conv1D Transformer (46.84% test accuracy) and Advanced Kaggle Transformer (37.97% test accuracy) now drastically outperform the baseline LSTM (16.46% test accuracy) while maintaining a highly regularized training curve and avoiding the severe overfitting observed in the baseline.
+4. **Generalization Power**: The ECA Conv-Transformer (ECA-CT) (46.84% test accuracy) and Multi-Stream Transformer (MST) (37.97% test accuracy) now drastically outperform the baseline LSTM (16.46% test accuracy) while maintaining a highly regularized training curve and avoiding the severe overfitting observed in the baseline.
 
 
