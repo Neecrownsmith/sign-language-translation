@@ -170,7 +170,7 @@ def main():
         print(f"WARNING: {vocab_path} not found. Predictions will be raw numbers.")
 
     print("Loading Model...")
-    model_path = "advanced_kaggle_transformer_250.h5" #"eca_conv1d_transformer_250.h5"
+    model_path = "mst_250.h5" #"eca_ct_250.h5"
     if not os.path.exists(model_path) and os.path.exists(os.path.join("models", model_path)):
         model_path = os.path.join("models", model_path)
     model = None
